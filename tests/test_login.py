@@ -1,14 +1,12 @@
 import pytest
 
-FORGOT_PASSWORD_TEXT = "パスワードを忘れた方はこちら"
-
 
 @pytest.fixture(autouse=True)
-def pause_5_seconds_each_case(page):
+def pause__seconds_each_case(page):
     """Pause 5 seconds after each test case for observation."""
     yield
     if not page.is_closed():
-        page.wait_for_timeout(5_000)
+        page.wait_for_timeout(3_000)
 
 
 def test_login_003_url_contains_login_path(access_to_login_page):
@@ -38,7 +36,12 @@ def test_login_006_input_fields(access_to_login_page):
     assert login_page.get_input_value(login_page.email_input) == "binhbsv"
     assert login_page.get_input_value(login_page.password_input) == "xxxx"
 
-
+def test_login_007_password_masking(access_to_login_page):
+    """Case 7: Password input should mask characters (type='password')."""
+    login_page = access_to_login_page
+    # Kiểm tra thuộc tính type của element password có phải là 'password' không
+    password_type = login_page.page.get_attribute(login_page.password_input, "type")
+    assert password_type == "password"
 
 
 def test_login_032_valid_credentials(access_to_login_page):
