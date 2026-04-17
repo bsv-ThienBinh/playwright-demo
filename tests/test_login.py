@@ -1,8 +1,5 @@
 import pytest
 
-FORGOT_PASSWORD_TEXT = "パスワードを忘れた方はこちら"
-
-
 @pytest.fixture(autouse=True)
 def pause_5_seconds_each_case(page):
     """Pause 5 seconds after each test case for observation."""
