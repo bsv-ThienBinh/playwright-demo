@@ -105,7 +105,6 @@ def test_login_015_password_label_and_input(access_to_login_page):
 
 
 
-
 def test_login_032_valid_credentials(access_to_login_page):
     """Check login with valid credentials"""
 
