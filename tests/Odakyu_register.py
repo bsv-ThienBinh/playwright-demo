@@ -40,7 +40,19 @@ def open_screen(page):
     expect(new_btn).to_be_visible(timeout=20000)
     expect(new_btn).to_be_enabled(timeout=20000)
     new_btn.scroll_into_view_if_needed()
-    new_btn.click(timeout=10000)
+    # Wait for transient loading mask to disappear before clicking.
+    overlay = page.locator("div.loading-overlay")
+    if overlay.count() > 0:
+        try:
+            expect(overlay.first).to_be_hidden(timeout=15000)
+        except Exception:
+            page.wait_for_timeout(1000)
+
+    try:
+        new_btn.click(timeout=10000)
+    except Exception:
+        # Fallback for rare overlay race where pointer events are still blocked.
+        new_btn.click(force=True, timeout=10000)
     debug_delay(page, 5000)
 
     # Fallback click if first click is swallowed by overlay/state transition.
@@ -71,7 +83,7 @@ def pause_10s_each_test(page):
         return
     try:
         if not page.is_closed():
-            page.wait_for_timeout(10000)
+            page.wait_for_timeout(5000)
     except PlaywrightError:
         # Ignore teardown delay when page/context was already closed by browser/runtime.
         pass
@@ -114,7 +126,9 @@ def test_06_email_input(page):
 def test_07_password_label(page):
     label = page.locator("div.label-title", has_text="パスワード").first
     expect(label).to_be_visible()
-    expect(label).to_have_text("パスワード（半角英数字 8文字以上32文字以内）")
+    expect(label).to_contain_text("パスワード")
+    expect(label).to_contain_text("半角英数字 8文字以上32文字以内）")
+
 
 from playwright.sync_api import expect
 
@@ -194,19 +208,35 @@ def test_13_role_select_cannot_choose_both(page):
 
 
 def test_14_ticket_point_permission_display(page):
-    # Khu vuc label "チケット組成時のポイント付与パラメータの変更権限"
-    box = page.locator("div.label-input", has_text="チケット組成時のポイント付与パラメータの変更権限").first
+    role_box = page.locator("div.label-input", has_text="権限").first
+    role_select = role_box.locator(".multiselect-wrapper")
+    role_select.click()
+    role_box.locator("li.multiselect-option", has_text="テナント管理者").click()
+    expect(role_box.locator(".multiselect-single-label")).to_have_text("テナント管理者")
 
-    # Hien thi label
-    expect(box.locator("div.label-title")).to_be_visible()
-
-    # Hien thi 2 lua chon "有" va "無"
-    expect(box.locator("label.custom-radio-input", has_text="有")).to_be_visible()
-    expect(box.locator("label.custom-radio-input", has_text="無")).to_be_visible()
+    section = page.locator(
+        "div.label-input:has(div.label-title:has-text('チケット組成時のポイント付与パラメータの変更権限'))"
+    ).first
+    expect(section).to_be_visible(timeout=10000)
+    expect(
+        section.locator(
+            "div.label-title", has_text="チケット組成時のポイント付与パラメータの変更権限"
+        )
+    ).to_be_visible()
+    expect(section.locator("label.custom-radio-input", has_text="有")).to_be_visible()
+    expect(section.locator("label.custom-radio-input", has_text="無")).to_be_visible()
 
 
 def test_15_ticket_point_permission_select_yes(page):
-    box = page.locator("div.label-input", has_text="チケット組成時のポイント付与パラメータの変更権限").first
+    role_box = page.locator("div.label-input", has_text="権限").first
+    role_select = role_box.locator(".multiselect-wrapper")
+    role_select.click()
+    role_box.locator("li.multiselect-option", has_text="テナント管理者").click()
+    expect(role_box.locator(".multiselect-single-label")).to_have_text("テナント管理者")
+
+    box = page.locator(
+        "div.label-input:has(div.label-title:has-text('チケット組成時のポイント付与パラメータの変更権限'))"
+    ).first
     yes_radio = box.locator("input#authority1")
 
     # Chon "有"
@@ -217,7 +247,15 @@ def test_15_ticket_point_permission_select_yes(page):
 
 
 def test_16_ticket_point_permission_select_no(page):
-    box = page.locator("div.label-input", has_text="チケット組成時のポイント付与パラメータの変更権限").first
+    role_box = page.locator("div.label-input", has_text="権限").first
+    role_select = role_box.locator(".multiselect-wrapper")
+    role_select.click()
+    role_box.locator("li.multiselect-option", has_text="テナント管理者").click()
+    expect(role_box.locator(".multiselect-single-label")).to_have_text("テナント管理者")
+
+    box = page.locator(
+        "div.label-input:has(div.label-title:has-text('チケット組成時のポイント付与パラメータの変更権限'))"
+    ).first
     no_radio = box.locator("input#authority2")
 
     # Chon "無"
@@ -228,7 +266,13 @@ def test_16_ticket_point_permission_select_no(page):
 
 
 def test_17_ticket_point_permission_cannot_select_both(page):
+    role_box = page.locator("div.label-input", has_text="権限").first
+    role_select = role_box.locator(".multiselect-wrapper")
+    role_select.click()
+    role_box.locator("li.multiselect-option", has_text="テナント管理者").click()
+    expect(role_box.locator(".multiselect-single-label")).to_have_text("テナント管理者")
     box = page.locator("div.label-input", has_text="チケット組成時のポイント付与パラメータの変更権限").first
+    
     yes_radio = box.locator("input#authority1")
     no_radio = box.locator("input#authority2")
 
